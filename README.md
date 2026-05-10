@@ -292,27 +292,146 @@ Vikings (2013)/
     Vikings - S01E04.mkv
 ```
 
+## New Interactive Session Controls
+
+TV Renamer now supports live session management while running.
+
+You no longer need to restart the script between seasons or shows.
+
+Available runtime commands:
+
+```text
+s       = Change season
+n       = New show
+status  = Show current status
+help    = Show available commands
+q       = Quit
+```
+
 ---
 
-# Philosophy
+# Example Session
 
-Most TV ripping workflows overcomplicate episode handling using:
+```text
+Show name: Vikings
+Year: 2013
+Season number: 1
+```
 
-- metadata scraping
-- API lookups
-- duration matching
-- title fingerprinting
-- external databases
+TV Renamer automatically scans:
 
-TV Renamer intentionally avoids these systems.
+```text
+Vikings (2013)/Season 01/
+```
 
-The workflow already contains the necessary intelligence:
+and determines the next episode number based on existing files.
 
-- the user manually selects correct episode titles
-- episodes are ripped sequentially
-- filesystem state determines the next episode number
+Example:
 
-This makes the workflow deterministic, lightweight, and reliable.
+```text
+Vikings - S01E01.mkv
+Vikings - S01E02.mkv
+```
+
+Automatically resumes at:
+
+```text
+S01E03
+```
+
+---
+
+# Changing Seasons Without Restarting
+
+While TV Renamer is running, type:
+
+```text
+s
+```
+
+Then enter the new season number.
+
+Example:
+
+```text
+New season number: 2
+```
+
+TV Renamer immediately switches to:
+
+```text
+Vikings (2013)/Season 02/
+```
+
+and automatically determines the next episode number.
+
+No restart required.
+
+---
+
+# Switching to a Different Show
+
+While running, type:
+
+```text
+n
+```
+
+You will be prompted for:
+
+```text
+Show name
+Year
+Season number
+```
+
+TV Renamer then updates the active session automatically.
+
+---
+
+# Session Status
+
+To display the current active session:
+
+```text
+status
+```
+
+Example output:
+
+```text
+Show: Vikings
+Season: 02
+Next Episode: 05
+Watching:
+C:\Users\kenneth\Videos\DVD Backups\Incoming
+
+Destination:
+C:\Users\kenneth\Videos\DVD Backups\Vikings (2013)\Season 02
+```
+
+---
+
+# Design Philosophy
+
+TV Renamer intentionally avoids heavyweight media automation systems.
+
+The workflow assumes:
+
+```text
+rip order == episode order
+```
+
+Because the user manually selects valid episode titles in MakeMKV, episode ordering becomes deterministic.
+
+Instead of trying to identify episodes through metadata scraping or runtime matching, TV Renamer uses:
+
+* ripping order
+* filesystem state
+* sequential numbering
+* Jellyfin/Plex naming conventions
+
+This creates a lightweight and highly reliable ingest workflow for physical media TV collections.
 
 ---
 
