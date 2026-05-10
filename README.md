@@ -321,7 +321,3 @@ This makes the workflow deterministic, lightweight, and reliable.
 MIT License
 
 See LICENSE file for details.
-
-````
-
----
