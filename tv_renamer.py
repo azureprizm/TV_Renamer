@@ -3,22 +3,18 @@
 #
 # Copyright (c) 2026 Joshua Holmes
 #
-# MIT License
+# Licensed under the Apache License, Version 2.0
+# you may not use this file except in compliance
+# with the License.
 #
-# Permission is hereby granted, free of charge, to any
-# person obtaining a copy of this software and associated
-# documentation files (the "Software"), to deal in the
-# Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish,
-# distribute, sublicense, and/or sell copies of the
-# Software, subject to the following conditions:
+# You may obtain a copy of the License at:
 #
-# The above copyright notice and this permission notice
-# shall be included in all copies or substantial portions
-# of the Software.
+# http://www.apache.org/licenses/LICENSE-2.0
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
-# KIND, EXPRESS OR IMPLIED.
+# Unless required by applicable law or agreed to
+# in writing, software distributed under the
+# License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
 # ============================================================
 
 # tv_renamer.py
