@@ -418,7 +418,7 @@ See LICENSE file for details.
 ```text
 MIT License
 
-Copyright (c) 2026 Kenneth Hol
+Copyright (c) 2026 Joshua Holmes
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
