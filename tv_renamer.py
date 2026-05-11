@@ -37,8 +37,8 @@
 #   3. Script scans existing Jellyfin season folder
 #      and automatically determines next episode number
 #
-#   4. MakeMKV rips into:
-#        D:\Rips\Incoming
+#   4. MakeMKV rips into something like:
+#        D:\TV Shows\Incoming
 #
 #   5. Script watches for completed MKVs,
 #      renames sequentially,
