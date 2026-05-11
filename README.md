@@ -4,10 +4,10 @@ A lightweight automated TV episode renamer and Jellyfin organizer designed speci
 
 TV Renamer watches a dedicated MakeMKV output folder, waits for completed `.mkv` files, then automatically:
 
-- determines the next episode number
-- renames episodes sequentially
-- moves files into a Jellyfin-compatible folder structure
-- preserves numbering across multiple discs
+* determines the next episode number
+* renames episodes sequentially
+* moves files into a Jellyfin-compatible folder structure
+* preserves numbering across multiple discs
 
 ---
 
@@ -17,12 +17,12 @@ Most media automation tools were built around downloaded media files, not physic
 
 Traditional TV ripping workflows often require:
 
-- manual renaming
-- drag/drop sorting
-- FileBot passes
-- metadata matching
-- Sonarr imports
-- temporary staging folders
+* manual renaming
+* drag/drop sorting
+* FileBot passes
+* metadata matching
+* Sonarr imports
+* temporary staging folders
 
 TV Renamer simplifies the workflow by assuming:
 
@@ -38,37 +38,97 @@ No metadata scraping is required.
 
 # Features
 
-- Automatic sequential episode numbering
-- Multi-disc support
-- Jellyfin-compatible naming
-- Real-time folder monitoring
-- Automatic next-episode detection
-- File completion/stability detection
-- No metadata scraping
-- No TMDB dependency
-- No Sonarr required
-- No paid software required
+* Automatic sequential episode numbering
+* Multi-disc support
+* Jellyfin-compatible naming
+* Plex-compatible naming
+* Real-time folder monitoring
+* Automatic next-episode detection
+* File completion/stability detection
+* Interactive season switching
+* Interactive show switching
+* Live status commands
+* Windows standalone EXE support
+* No metadata scraping
+* No TMDB dependency
+* No Sonarr required
+* No paid software required
 
 ---
 
 # Requirements
 
-- Python 3.10+
-- MakeMKV
-- watchdog Python package
+TV Renamer now supports two installation methods:
+
+---
+
+## Option 1 — Windows EXE (Recommended)
+
+No Python installation required.
+
+Download the latest release from:
+
+```text
+GitHub → Releases
+```
+
+Then run:
+
+```text
+TV_Renamer.exe
+```
+
+This is the simplest setup method for most users.
+
+---
+
+## Option 2 — Run From Python Source
+
+Requirements:
+
+* Python 3.10+
+* MakeMKV
+* watchdog Python package
 
 Install watchdog:
 
-```bash
+````bash
 pip install watchdog
+````
+
+---
+## First Launch Configuration
+
+The first time TV Renamer is launched, it will open folder selection windows.
+
+You will be asked to select:
+
+* your MakeMKV `Incoming` folder
+* your main TV library root folder
+
+Example:
+
+```text
+Incoming Folder:
+C:\Users\your_username\Videos\TV_Shows\Incoming
+
+TV Library Root:
+C:\Users\your_username\Videos\TV_Shows
 ```
 
+TV Renamer automatically saves these locations into:
+
+```text
+config.json
+```
+
+Future launches will reuse the saved configuration automatically.
 ---
 
 # Recommended Folder Structure
 
 ```text
-DVD Backups/
+TV_Shows/
 │
 ├── Incoming/
 │
@@ -81,10 +141,10 @@ DVD Backups/
 
 Recommended setup:
 
-- `Incoming/` is used only for fresh MakeMKV rips
-- TV Renamer watches `Incoming/`
-- Completed files are moved into show season folders automatically
-- Jellyfin scans the organized folders normally
+* `Incoming/` is used only for fresh MakeMKV rips
+* TV Renamer watches `Incoming/`
+* Completed files are moved into show season folders automatically
+* Jellyfin scans the organized folders normally
 
 ---
 
@@ -164,9 +224,9 @@ In MakeMKV, set the export/output folder to this location.
 
 This folder is important because:
 
-- MakeMKV writes files progressively while ripping
-- TV Renamer monitors this folder in real time
-- completed files are automatically moved into your Jellyfin library
+* MakeMKV writes files progressively while ripping
+* TV Renamer monitors this folder in real time
+* completed files are automatically moved into your Jellyfin library
 
 The incoming folder acts like a processing queue.
 
@@ -221,10 +281,24 @@ Vikings (2013)/
 
 # Usage
 
-Run:
+## Running The Windows EXE
+
+Download:
+
+```text
+TV_Renamer.exe
+```
+
+Then simply double-click the executable.
+
+---
+
+## Running From Python Source
+
+Navigate to the project folder:
 
 ```bash
-cd "C:\Users\your_username\file_path_for_tv_renamer.py_file"
+cd "C:\Users\your_username\path_to_TV_Renamer"
 ```
 
 Then run:
@@ -240,9 +314,6 @@ py tv_renamer.py
 ```
 
 
-
-
-
 Example startup:
 
 ```text
@@ -253,12 +324,28 @@ Season number: 1
 
 TV Renamer automatically:
 
-1. Scans the existing season folder
+1. Scans the existing season folder as long as you directed the 
 2. Detects the highest episode already present
 3. Determines the next episode number
 4. Watches the incoming folder
 5. Waits for completed MKV files
 6. Renames and moves episodes automatically
+
+---
+
+# Interactive Runtime Commands
+
+While TV Renamer is running, the following commands are available:
+
+```text
+s       = Change season
+n       = New show
+status  = Show current status
+help    = Show commands
+q       = Quit
+```
+
+This allows continuous ripping sessions without restarting the application.
 
 ---
 
@@ -292,146 +379,27 @@ Vikings (2013)/
     Vikings - S01E04.mkv
 ```
 
-## New Interactive Session Controls
-
-TV Renamer now supports live session management while running.
-
-You no longer need to restart the script between seasons or shows.
-
-Available runtime commands:
-
-```text
-s       = Change season
-n       = New show
-status  = Show current status
-help    = Show available commands
-q       = Quit
-```
-
 ---
 
-# Example Session
+# Philosophy
 
-```text
-Show name: Vikings
-Year: 2013
-Season number: 1
-```
+Most TV ripping workflows overcomplicate episode handling using:
 
-TV Renamer automatically scans:
+* metadata scraping
+* API lookups
+* duration matching
+* title fingerprinting
+* external databases
 
-```text
-Vikings (2013)/Season 01/
-```
+TV Renamer intentionally avoids these systems.
 
-and determines the next episode number based on existing files.
+The workflow already contains the necessary intelligence:
 
-Example:
+* the user manually selects correct episode titles
+* episodes are ripped sequentially
+* filesystem state determines the next episode number
 
-```text
-Vikings - S01E01.mkv
-Vikings - S01E02.mkv
-```
-
-Automatically resumes at:
-
-```text
-S01E03
-```
-
----
-
-# Changing Seasons Without Restarting
-
-While TV Renamer is running, type:
-
-```text
-s
-```
-
-Then enter the new season number.
-
-Example:
-
-```text
-New season number: 2
-```
-
-TV Renamer immediately switches to:
-
-```text
-Vikings (2013)/Season 02/
-```
-
-and automatically determines the next episode number.
-
-No restart required.
-
----
-
-# Switching to a Different Show
-
-While running, type:
-
-```text
-n
-```
-
-You will be prompted for:
-
-```text
-Show name
-Year
-Season number
-```
-
-TV Renamer then updates the active session automatically.
-
----
-
-# Session Status
-
-To display the current active session:
-
-```text
-status
-```
-
-Example output:
-
-```text
-Show: Vikings
-Season: 02
-Next Episode: 05
-Watching:
-C:\Users\kenneth\Videos\DVD Backups\Incoming
-
-Destination:
-C:\Users\kenneth\Videos\DVD Backups\Vikings (2013)\Season 02
-```
-
----
-
-# Design Philosophy
-
-TV Renamer intentionally avoids heavyweight media automation systems.
-
-The workflow assumes:
-
-```text
-rip order == episode order
-```
-
-Because the user manually selects valid episode titles in MakeMKV, episode ordering becomes deterministic.
-
-Instead of trying to identify episodes through metadata scraping or runtime matching, TV Renamer uses:
-
-* ripping order
-* filesystem state
-* sequential numbering
-* Jellyfin/Plex naming conventions
-
-This creates a lightweight and highly reliable ingest workflow for physical media TV collections.
+This makes the workflow deterministic, lightweight, and reliable.
 
 ---
 
@@ -440,3 +408,35 @@ This creates a lightweight and highly reliable ingest workflow for physical medi
 MIT License
 
 See LICENSE file for details.
+
+````
+
+---
+
+## LICENSE
+
+```text
+MIT License
+
+Copyright (c) 2026 Kenneth Hol
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+````
+
+---
