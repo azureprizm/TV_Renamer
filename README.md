@@ -51,6 +51,51 @@ No metadata scraping is required.
 
 ---
 
+# Why TV Renamer?
+
+TV Renamer is intentionally designed for physical media workflows.
+
+Unlike Sonarr/FileBot workflows, TV Renamer:
+
+- does not require metadata scraping
+- does not require internet lookups
+- does not require drag/drop importing
+- does not require manual renaming passes
+- does not require episode matching heuristics
+
+If your workflow already preserves episode order,
+then deterministic sequential numbering is simpler
+and more reliable.
+
+---
+
+# Designed For
+
+TV Renamer is ideal for:
+
+- DVD TV box sets
+- Blu-ray TV collections
+- Jellyfin users
+- Plex users
+- archival workflows
+- offline media libraries
+- users who rip episodes sequentially
+
+---
+
+# Not Intended For
+
+TV Renamer is not designed for:
+
+- downloaded scene releases
+- automatic metadata matching
+- anime absolute numbering
+- mixed episode ordering
+- bonus feature identification
+- multi-episode single MKV splitting
+
+---
+
 # Features
 
 * Automatic sequential episode numbering
