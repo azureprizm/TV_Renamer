@@ -217,7 +217,7 @@ Create a dedicated incoming folder.
 Example:
 
 ```text
-C:\Users\your_username\Videos\DVD Backups\Incoming
+C:\Users\your_username\Videos\TV_Shows\Incoming
 ```
 
 In MakeMKV, set the export/output folder to this location.
