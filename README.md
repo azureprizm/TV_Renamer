@@ -1,7 +1,7 @@
 
 
 # TV Renamer
-```md
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
@@ -10,7 +10,10 @@
 ![Plex](https://img.shields.io/badge/Plex-compatible-e5a00d)
 ![MakeMKV](https://img.shields.io/badge/MakeMKV-supported-red)
 ![Open Source](https://img.shields.io/badge/open--source-yes-brightgreen)
-```
+![GitHub release](https://img.shields.io/github/v/release/azureprizm/TV_Renamer)
+![GitHub downloads](https://img.shields.io/github/downloads/azureprizm/TV_Renamer/total)
+![GitHub stars](https://img.shields.io/github/stars/azureprizm/TV_Renamer)
+![GitHub issues](https://img.shields.io/github/issues/azureprizm/TV_Renamer)
 
 A lightweight automated TV episode renamer and Jellyfin organizer designed specifically for physical media TV ripping workflows using MakeMKV.
 
