@@ -1,4 +1,4 @@
-# TV_Renamer
+# TV Renamer
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.md)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
@@ -105,6 +105,7 @@ Anime splitting is supported when a long MKV has useful chapter markers near epi
 - Windows standalone EXE support
 - Anime/Split Mode for long MKV files
 - Automatic chapter-based anime split detection
+- Runtime-based anime split fallback when chapter markers are missing
 - Manual timestamp splitting fallback
 - No metadata scraping
 - No TMDB dependency
@@ -366,9 +367,10 @@ When Anime/Split Mode is enabled, TV Renamer will:
 2. Read MKV metadata using `mkvmerge -J`.
 3. Estimate the number of episodes from the total runtime.
 4. Look for chapter markers near expected episode boundaries.
-5. Show the proposed split timestamps.
-6. Ask for confirmation before splitting.
-7. Rename and move each split episode sequentially.
+5. Fall back to evenly spaced runtime splits if chapter markers are missing.
+6. Show the proposed split timestamps.
+7. Ask for confirmation before splitting.
+8. Rename and move each split episode sequentially.
 
 Example:
 
@@ -388,6 +390,14 @@ Episode 3 = 00:48:22 -> end
 ```
 
 If automatic detection is unavailable, TV Renamer can still ask for manual split timestamps.
+
+Runtime fallback keeps episodes in playback order and creates continuous segments:
+
+```text
+Episode 1 = 00:00:00 -> first split point
+Episode 2 = first split point -> second split point
+Episode 3 = second split point -> end
+```
 
 Manual timestamp example:
 
