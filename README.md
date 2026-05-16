@@ -222,13 +222,18 @@ title.basics.tsv.gz
 title.episode.tsv.gz
 ```
 
-Place them in:
+On first launch, TV Renamer can ask you to select the folder that contains those files. You can also update the folder later with the runtime command:
 
 ```text
-TV_Renamer/
-  imdb_data/
-    title.basics.tsv.gz
-    title.episode.tsv.gz
+imdb
+```
+
+Example folder layout:
+
+```text
+IMDb Datasets/
+  title.basics.tsv.gz
+  title.episode.tsv.gz
 ```
 
 When those files are present, TV Renamer can:
@@ -269,6 +274,7 @@ You will be asked to select:
 
 - your MakeMKV `Incoming` folder
 - your main TV library root folder
+- an optional IMDb dataset folder
 
 Example:
 
@@ -278,6 +284,9 @@ C:\Users\your_username\Videos\TV_Shows\Incoming
 
 TV Library Root:
 C:\Users\your_username\Videos\TV_Shows
+
+IMDb Dataset Folder:
+D:\Metadata\IMDb Datasets
 ```
 
 TV Renamer saves these locations into:
@@ -610,6 +619,7 @@ n       = Change show
 mode    = Change rip mode
 status  = Show current status
 config  = Reconfigure folders
+imdb    = Set IMDb dataset folder
 help    = Show commands
 q       = Quit
 ```
