@@ -529,12 +529,61 @@ This can be useful for double-checking TV Renamer's proposed split points before
 Use this as a starting prompt:
 
 ```text
-Look up the episode runtimes for [SHOW NAME], season [SEASON NUMBER].
-Use IMDb or another reliable episode guide if IMDb is incomplete.
-Return only the episodes in season order.
-Include each episode number, title if available, listed runtime, and cumulative split point.
-If sources disagree, mention the difference briefly.
-Do not include plot summaries.
+ Look up the episode runtimes for [SERIES NAME] Season [X] using reliable episode and home media sources such as IMDb, TVDB, Blu-ray.com, DVD release listings, official distributor information, or verified runtime databases.
+
+ Before generating the runtime list, first ask what media source/version the user is working with. Examples include:
+
+ * uncut DVD box set
+ * Blu-ray release
+ * broadcast TV recordings
+ * streaming version
+ * digitally purchased episodes
+ * downloaded media files
+ * remastered releases
+ * fan-restored versions
+ * region-specific releases
+
+ Runtime accuracy and split points should be tailored specifically to that media source whenever possible.
+
+ Do not assume every episode is exactly the same length, and do not rely solely on generic streaming metadata.
+
+ When determining runtimes and split points, take into account:
+
+ * original DVD/Blu-ray disc structure
+ * episodes-per-disc authoring patterns
+ * actual physical media layouts
+ * opening/ending variations
+ * recap episodes
+ * double-length or extended episodes
+ * previews and bonus segments
+ * practical disc runtime limits
+ * differences between broadcast, streaming, and physical releases
+
+ Prioritize the specified media version over generalized episode guides when conflicts exist.
+
+ Return episodes only in season order.
+
+ For each episode include:
+
+ * episode number
+ * title (if available)
+ * listed or estimated runtime
+ * cumulative split point
+ * disc grouping when known or inferable
+
+ Example format:
+
+ Disc 1
+ S01E01 - Episode Title - 24 min - split after 00:24:00
+ S01E02 - Episode Title - 24 min - split after 00:48:00
+
+ Disc 2
+ S01E05 - Episode Title - 23 min - split after 01:59:00
+
+ If sources disagree, briefly explain why (broadcast edit, streaming cut, DVD authoring differences, remaster timing changes, etc.).
+
+ Do not include plot summaries.
+
 ```
 
 Example output format to ask for:
