@@ -40,3 +40,6 @@ desktop.ini
 *.avi
 *.mov
 *.m4v
+
+# Optional local IMDb datasets if stored in the repo folder
+imdb_data/
