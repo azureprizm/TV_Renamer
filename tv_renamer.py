@@ -10,6 +10,8 @@ import re
 import shutil
 import time
 import json
+import csv
+import gzip
 import threading
 import subprocess
 import tempfile
@@ -29,11 +31,53 @@ STABLE_TIME = 30
 POLL_INTERVAL = 2
 
 MKVMERGE_PATH = "mkvmerge.exe"
+FFMPEG_PATH = "ffmpeg.exe"
 
 ANIME_TARGET_EPISODE_MINUTES = 24
 ANIME_MIN_EPISODE_MINUTES = 18
 ANIME_MAX_EPISODE_MINUTES = 35
 CHAPTER_MATCH_TOLERANCE_MINUTES = 3
+
+IMDB_DATA_DIR_DEFAULT = "imdb_data"
+IMDB_BASICS_FILE = "title.basics.tsv.gz"
+IMDB_EPISODE_FILE = "title.episode.tsv.gz"
+
+FFMPEG_REFINE_WINDOW_SECONDS = 90
+FFMPEG_MAX_REFINEMENT_SECONDS = 45
+
+
+def select_optional_imdb_data_dir():
+
+    from tkinter.filedialog import askdirectory
+
+    print(
+        "\nIMDb dataset folder is optional."
+    )
+
+    print(
+        "Select the folder containing "
+        f"{IMDB_BASICS_FILE} and "
+        f"{IMDB_EPISODE_FILE}."
+    )
+
+    print(
+        "Cancel to skip IMDb dataset "
+        "fallback."
+    )
+
+    imdb_data_dir = askdirectory(
+        title=(
+            "Select IMDb Dataset Folder "
+            "(Optional)"
+        )
+    )
+
+    if not imdb_data_dir:
+        return ""
+
+    return str(
+        Path(imdb_data_dir)
+    )
 
 
 def create_config():
@@ -67,6 +111,8 @@ def create_config():
         print("No folder selected.")
         quit()
 
+    imdb_data_dir = select_optional_imdb_data_dir()
+
     incoming_path = Path(incoming)
     tv_root_path = Path(tv_root)
 
@@ -82,7 +128,8 @@ def create_config():
 
     config_data = {
         "incoming_dir": str(incoming_path),
-        "tv_root": str(tv_root_path)
+        "tv_root": str(tv_root_path),
+        "imdb_data_dir": imdb_data_dir
     }
 
     with open(CONFIG_FILE, "w") as f:
@@ -95,6 +142,7 @@ def load_config():
 
     global INCOMING_DIR
     global TV_ROOT
+    global IMDB_DATA_DIR
 
     if not CONFIG_FILE.exists():
         create_config()
@@ -109,6 +157,21 @@ def load_config():
     TV_ROOT = Path(
         config["tv_root"]
     )
+
+    imdb_data_dir = config.get(
+        "imdb_data_dir",
+        IMDB_DATA_DIR_DEFAULT
+    )
+
+    if imdb_data_dir:
+
+        IMDB_DATA_DIR = Path(
+            imdb_data_dir
+        )
+
+    else:
+
+        IMDB_DATA_DIR = None
 
 
 load_config()
@@ -495,6 +558,629 @@ def get_chapter_start_seconds(metadata):
     )
 
 
+def normalize_imdb_title(value):
+
+    return re.sub(
+        r"[^a-z0-9]+",
+        "",
+        value.lower()
+    )
+
+
+def get_imdb_dataset_paths():
+
+    if IMDB_DATA_DIR is None:
+        return None
+
+    basics_path = (
+        IMDB_DATA_DIR
+        / IMDB_BASICS_FILE
+    )
+
+    episode_path = (
+        IMDB_DATA_DIR
+        / IMDB_EPISODE_FILE
+    )
+
+    if (
+        not basics_path.exists()
+        or not episode_path.exists()
+    ):
+
+        print(
+            "\nIMDb dataset files not found in:"
+        )
+
+        print(
+            IMDB_DATA_DIR
+        )
+
+        print(
+            "\nExpected files:"
+        )
+
+        print(
+            f"- {IMDB_BASICS_FILE}"
+        )
+
+        print(
+            f"- {IMDB_EPISODE_FILE}"
+        )
+
+        return None
+
+    return basics_path, episode_path
+
+
+def iter_imdb_rows(path):
+
+    with gzip.open(
+        path,
+        "rt",
+        encoding="utf-8",
+        newline=""
+    ) as file:
+
+        reader = csv.DictReader(
+            file,
+            delimiter="\t"
+        )
+
+        for row in reader:
+            yield row
+
+
+def find_imdb_series_tconst(basics_path):
+
+    wanted_title = normalize_imdb_title(
+        show_name
+    )
+
+    best_match = None
+    best_score = 0
+
+    for row in iter_imdb_rows(
+        basics_path
+    ):
+
+        if row.get("titleType") not in (
+            "tvSeries",
+            "tvMiniSeries"
+        ):
+            continue
+
+        primary_title = row.get(
+            "primaryTitle",
+            ""
+        )
+
+        original_title = row.get(
+            "originalTitle",
+            ""
+        )
+
+        title_matches = [
+            normalize_imdb_title(
+                primary_title
+            ),
+            normalize_imdb_title(
+                original_title
+            )
+        ]
+
+        if wanted_title not in title_matches:
+            continue
+
+        score = 50
+
+        if row.get("startYear") == year:
+            score += 50
+
+        if row.get("titleType") == "tvSeries":
+            score += 5
+
+        if score > best_score:
+
+            best_score = score
+            best_match = row
+
+    if not best_match:
+        return None
+
+    print(
+        "\nIMDb dataset match:"
+    )
+
+    print(
+        f"{best_match.get('primaryTitle')} "
+        f"({best_match.get('startYear')})"
+    )
+
+    return best_match.get("tconst")
+
+
+def get_imdb_season_episode_map(
+    episode_path,
+    series_tconst,
+    episode_count
+):
+
+    wanted_numbers = set(
+        range(
+            next_episode,
+            next_episode + episode_count
+        )
+    )
+
+    episode_map = {}
+
+    for row in iter_imdb_rows(
+        episode_path
+    ):
+
+        if row.get("parentTconst") != series_tconst:
+            continue
+
+        if row.get("seasonNumber") != str(season):
+            continue
+
+        episode_number = row.get(
+            "episodeNumber"
+        )
+
+        if (
+            not episode_number
+            or not episode_number.isdigit()
+        ):
+            continue
+
+        episode_number = int(
+            episode_number
+        )
+
+        if episode_number not in wanted_numbers:
+            continue
+
+        episode_map[episode_number] = row.get(
+            "tconst"
+        )
+
+    if len(episode_map) != episode_count:
+        return None
+
+    return episode_map
+
+
+def get_imdb_episode_details(
+    basics_path,
+    episode_map
+):
+
+    wanted_tconsts = {
+        tconst: episode_number
+        for episode_number, tconst
+        in episode_map.items()
+    }
+
+    episode_details = {}
+
+    for row in iter_imdb_rows(
+        basics_path
+    ):
+
+        tconst = row.get("tconst")
+
+        if tconst not in wanted_tconsts:
+            continue
+
+        runtime = row.get(
+            "runtimeMinutes"
+        )
+
+        if (
+            not runtime
+            or not runtime.isdigit()
+        ):
+            return None
+
+        episode_number = wanted_tconsts[
+            tconst
+        ]
+
+        episode_details[episode_number] = {
+            "title": row.get(
+                "primaryTitle",
+                ""
+            ),
+            "runtime": int(
+                runtime
+            )
+        }
+
+    if len(episode_details) != len(
+        episode_map
+    ):
+        return None
+
+    return [
+        episode_details[episode_number]
+        for episode_number in sorted(
+            episode_details
+        )
+    ]
+
+
+def get_imdb_episode_runtimes(
+    episode_count
+):
+
+    dataset_paths = get_imdb_dataset_paths()
+
+    if not dataset_paths:
+        return None
+
+    basics_path, episode_path = dataset_paths
+
+    print(
+        "\nChecking local IMDb datasets..."
+    )
+
+    series_tconst = find_imdb_series_tconst(
+        basics_path
+    )
+
+    if not series_tconst:
+
+        print(
+            "\nIMDb dataset fallback skipped:"
+            "\nNo matching series found."
+        )
+
+        return None
+
+    episode_map = get_imdb_season_episode_map(
+        episode_path,
+        series_tconst,
+        episode_count
+    )
+
+    if not episode_map:
+
+        print(
+            "\nIMDb dataset fallback skipped:"
+            "\nCould not match the needed "
+            "season episodes."
+        )
+
+        return None
+
+    episode_details = get_imdb_episode_details(
+        basics_path,
+        episode_map
+    )
+
+    if not episode_details:
+
+        print(
+            "\nIMDb dataset fallback skipped:"
+            "\nOne or more episode runtimes "
+            "were missing."
+        )
+
+        return None
+
+    print(
+        "\nIMDb episode runtimes:"
+    )
+
+    for index, detail in enumerate(
+        episode_details,
+        start=next_episode
+    ):
+
+        print(
+            f"S{season:02d}E{index:02d} - "
+            f"{detail['runtime']} min - "
+            f"{detail['title']}"
+        )
+
+    return [
+        detail["runtime"]
+        for detail in episode_details
+    ]
+
+
+def build_weighted_split_points(
+    duration_seconds,
+    runtimes
+):
+
+    total_runtime = sum(
+        runtimes
+    )
+
+    if total_runtime <= 0:
+        return []
+
+    split_points = []
+    running_runtime = 0
+
+    for runtime in runtimes[:-1]:
+
+        running_runtime += runtime
+
+        split_points.append(
+            duration_seconds
+            * running_runtime
+            / total_runtime
+        )
+
+    return split_points
+
+
+def run_ffmpeg_detection(command):
+
+    try:
+
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True
+        )
+
+    except FileNotFoundError:
+        return ""
+
+    return (
+        result.stdout
+        + "\n"
+        + result.stderr
+    )
+
+
+def normalize_ffmpeg_candidate_time(
+    candidate,
+    start_seconds
+):
+
+    if candidate < start_seconds:
+        return candidate + start_seconds
+
+    return candidate
+
+
+def find_black_frame_candidates(
+    input_file,
+    predicted_seconds
+):
+
+    start_seconds = max(
+        0,
+        predicted_seconds
+        - FFMPEG_REFINE_WINDOW_SECONDS / 2
+    )
+
+    command = [
+        FFMPEG_PATH,
+        "-hide_banner",
+        "-nostats",
+        "-ss",
+        seconds_to_timestamp(
+            start_seconds
+        ),
+        "-t",
+        str(FFMPEG_REFINE_WINDOW_SECONDS),
+        "-i",
+        str(input_file),
+        "-vf",
+        "blackdetect=d=0.2:pix_th=0.10",
+        "-an",
+        "-f",
+        "null",
+        "-"
+    ]
+
+    output = run_ffmpeg_detection(
+        command
+    )
+
+    candidates = []
+
+    for match in re.finditer(
+        r"black_start:"
+        r"([0-9.]+)"
+        r"\s+black_end:"
+        r"([0-9.]+)",
+        output
+    ):
+
+        start = float(
+            match.group(1)
+        )
+
+        end = float(
+            match.group(2)
+        )
+
+        candidates.append(
+            normalize_ffmpeg_candidate_time(
+                (start + end) / 2,
+                start_seconds
+            )
+        )
+
+    return candidates
+
+
+def find_silence_candidates(
+    input_file,
+    predicted_seconds
+):
+
+    start_seconds = max(
+        0,
+        predicted_seconds
+        - FFMPEG_REFINE_WINDOW_SECONDS / 2
+    )
+
+    command = [
+        FFMPEG_PATH,
+        "-hide_banner",
+        "-nostats",
+        "-ss",
+        seconds_to_timestamp(
+            start_seconds
+        ),
+        "-t",
+        str(FFMPEG_REFINE_WINDOW_SECONDS),
+        "-i",
+        str(input_file),
+        "-af",
+        "silencedetect=noise=-35dB:d=0.25",
+        "-vn",
+        "-f",
+        "null",
+        "-"
+    ]
+
+    output = run_ffmpeg_detection(
+        command
+    )
+
+    starts = [
+        float(match.group(1))
+        for match in re.finditer(
+            r"silence_start:\s*([0-9.]+)",
+            output
+        )
+    ]
+
+    ends = [
+        float(match.group(1))
+        for match in re.finditer(
+            r"silence_end:\s*([0-9.]+)",
+            output
+        )
+    ]
+
+    candidates = []
+
+    for start, end in zip(
+        starts,
+        ends
+    ):
+
+        candidates.append(
+            normalize_ffmpeg_candidate_time(
+                (start + end) / 2,
+                start_seconds
+            )
+        )
+
+    return candidates
+
+
+def refine_split_points_with_ffmpeg(
+    input_file,
+    split_points
+):
+
+    if not shutil.which(
+        FFMPEG_PATH
+    ):
+        return split_points
+
+    refined_points = []
+
+    print(
+        "\nRefining split points with ffmpeg..."
+    )
+
+    for split_point in split_points:
+
+        candidates = []
+
+        candidates.extend(
+            find_black_frame_candidates(
+                input_file,
+                split_point
+            )
+        )
+
+        candidates.extend(
+            find_silence_candidates(
+                input_file,
+                split_point
+            )
+        )
+
+        nearby_candidates = [
+            candidate
+            for candidate in candidates
+            if abs(
+                candidate - split_point
+            ) <= FFMPEG_MAX_REFINEMENT_SECONDS
+        ]
+
+        if nearby_candidates:
+
+            refined_points.append(
+                min(
+                    nearby_candidates,
+                    key=lambda candidate: abs(
+                        candidate - split_point
+                    )
+                )
+            )
+
+        else:
+
+            refined_points.append(
+                split_point
+            )
+
+    return refined_points
+
+
+def detect_imdb_split_timestamps(
+    input_file,
+    duration_seconds,
+    episode_count
+):
+
+    runtimes = get_imdb_episode_runtimes(
+        episode_count
+    )
+
+    if not runtimes:
+        return []
+
+    split_points = build_weighted_split_points(
+        duration_seconds,
+        runtimes
+    )
+
+    split_points = refine_split_points_with_ffmpeg(
+        input_file,
+        split_points
+    )
+
+    if not split_points:
+        return []
+
+    print(
+        "\nUsing IMDb-based runtime "
+        "split fallback."
+    )
+
+    return [
+        seconds_to_timestamp(
+            split_point
+        )
+        for split_point in split_points
+    ]
+
+
 def choose_episode_count(duration_seconds):
 
     target_seconds = (
@@ -562,11 +1248,29 @@ def detect_anime_split_timestamps(input_file):
     if not chapter_starts:
 
         print(
-            "\nAutomatic split unavailable:"
             "\nNo chapter markers found."
         )
 
-        return []
+        print(
+            "\nUsing runtime-based split "
+            "fallback if IMDb data is "
+            "unavailable."
+        )
+
+        imdb_timestamps = detect_imdb_split_timestamps(
+            input_file,
+            duration_seconds,
+            episode_count
+        )
+
+        if imdb_timestamps:
+            return imdb_timestamps
+
+        return detect_runtime_split_timestamps(
+            input_file,
+            duration_seconds,
+            episode_count
+        )
 
     tolerance_seconds = (
         CHAPTER_MATCH_TOLERANCE_MINUTES
@@ -599,7 +1303,33 @@ def detect_anime_split_timestamps(input_file):
             )
             > tolerance_seconds
         ):
-            return []
+
+            print(
+                "\nChapter markers did not line "
+                "up with expected episode "
+                "boundaries."
+            )
+
+            print(
+                "\nUsing runtime-based split "
+                "fallback if IMDb data is "
+                "unavailable."
+            )
+
+            imdb_timestamps = detect_imdb_split_timestamps(
+                input_file,
+                duration_seconds,
+                episode_count
+            )
+
+            if imdb_timestamps:
+                return imdb_timestamps
+
+            return detect_runtime_split_timestamps(
+                input_file,
+                duration_seconds,
+                episode_count
+            )
 
         if (
             split_points
@@ -610,6 +1340,41 @@ def detect_anime_split_timestamps(input_file):
         split_points.append(
             nearest_chapter
         )
+
+    return [
+        seconds_to_timestamp(
+            split_point
+        )
+        for split_point in split_points
+    ]
+
+
+def detect_runtime_split_timestamps(
+    input_file,
+    duration_seconds,
+    episode_count
+):
+
+    if episode_count < 2:
+        return []
+
+    split_points = []
+
+    for split_number in range(
+        1,
+        episode_count
+    ):
+
+        split_points.append(
+            duration_seconds
+            / episode_count
+            * split_number
+        )
+
+    split_points = refine_split_points_with_ffmpeg(
+        input_file,
+        split_points
+    )
 
     return [
         seconds_to_timestamp(
@@ -1036,7 +1801,69 @@ def show_status():
         f"{DESTINATION_DIR}"
     )
 
+    if IMDB_DATA_DIR is not None:
+
+        print(
+            f"\nIMDb Dataset Folder:\n"
+            f"{IMDB_DATA_DIR}"
+        )
+
+    else:
+
+        print(
+            "\nIMDb Dataset Folder:\n"
+            "Not configured"
+        )
+
     print("=" * 60 + "\n")
+
+
+def update_imdb_data_dir():
+
+    global IMDB_DATA_DIR
+
+    from tkinter import Tk
+
+    root = Tk()
+    root.withdraw()
+
+    imdb_data_dir = select_optional_imdb_data_dir()
+
+    root.destroy()
+
+    with open(CONFIG_FILE, "r") as f:
+        config = json.load(f)
+
+    config["imdb_data_dir"] = imdb_data_dir
+
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
+
+    if imdb_data_dir:
+
+        IMDB_DATA_DIR = Path(
+            imdb_data_dir
+        )
+
+    else:
+
+        IMDB_DATA_DIR = None
+
+    if imdb_data_dir:
+
+        print(
+            "\nIMDb dataset folder updated:"
+        )
+
+        print(
+            IMDB_DATA_DIR
+        )
+
+    else:
+
+        print(
+            "\nIMDb dataset fallback disabled."
+        )
 
 
 def command_listener():
@@ -1158,6 +1985,14 @@ def command_listener():
             )
 
         # ====================================================
+        # IMDB DATASET FOLDER
+        # ====================================================
+
+        elif command == "imdb":
+
+            update_imdb_data_dir()
+
+        # ====================================================
         # HELP
         # ====================================================
 
@@ -1184,6 +2019,10 @@ def command_listener():
 
             print(
                 "config  = Reconfigure folders"
+            )
+
+            print(
+                "imdb    = Set IMDb dataset folder"
             )
 
             print(
