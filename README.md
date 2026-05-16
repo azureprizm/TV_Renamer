@@ -1,53 +1,44 @@
+# TV_Renamer
 
-
-# TV Renamer
-
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.md)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![Status](https://img.shields.io/badge/status-active-success)
 ![Jellyfin](https://img.shields.io/badge/Jellyfin-compatible-8250df)
 ![Plex](https://img.shields.io/badge/Plex-compatible-e5a00d)
 ![MakeMKV](https://img.shields.io/badge/MakeMKV-supported-red)
+![MKVToolNix](https://img.shields.io/badge/MKVToolNix-supported-orange)
 ![Open Source](https://img.shields.io/badge/open--source-yes-brightgreen)
 ![GitHub release](https://img.shields.io/github/v/release/azureprizm/TV_Renamer)
 ![GitHub downloads](https://img.shields.io/github/downloads/azureprizm/TV_Renamer/total)
 ![GitHub stars](https://img.shields.io/github/stars/azureprizm/TV_Renamer)
 ![GitHub issues](https://img.shields.io/github/issues/azureprizm/TV_Renamer)
 
-A lightweight automated TV episode renamer and Jellyfin organizer designed specifically for physical media TV ripping workflows using MakeMKV.
+TV Renamer is a lightweight Windows utility for organizing physical-media TV rips from MakeMKV into Jellyfin- and Plex-friendly season folders.
 
-TV Renamer watches a dedicated MakeMKV output folder, waits for completed `.mkv` files, then automatically:
+It watches a dedicated MakeMKV output folder, waits for completed `.mkv` files, then automatically:
 
-* determines the next episode number
-* renames episodes sequentially
-* moves files into a Jellyfin-compatible folder structure
-* preserves numbering across multiple discs
+- determines the next episode number
+- renames episodes sequentially
+- moves episodes into the correct show/season folder
+- preserves numbering across multiple discs
+- optionally splits long anime MKV files into individual episodes
 
 ---
 
 # Why This Exists
 
-Most media automation tools were built around downloaded media files, not physical DVD/Blu-ray box sets.
+Most media automation tools were built around downloaded files, metadata scraping, and import queues. Physical DVD and Blu-ray TV workflows are different.
 
-Traditional TV ripping workflows often require:
+When ripping a box set, the most reliable information is often the order you choose valid episode titles in MakeMKV.
 
-* manual renaming
-* drag/drop sorting
-* FileBot passes
-* metadata matching
-* Sonarr imports
-* temporary staging folders
-
-TV Renamer simplifies the workflow by assuming:
+TV Renamer is built around a simple assumption:
 
 ```text
 rip order == episode order
 ```
 
-If you manually select only valid episode titles in MakeMKV and rip them sequentially, then episode numbering becomes deterministic.
-
-No metadata scraping is required.
+If you select only real episode titles and rip them sequentially, episode numbering becomes deterministic. No online lookup is required.
 
 ---
 
@@ -55,17 +46,15 @@ No metadata scraping is required.
 
 TV Renamer is intentionally designed for physical media workflows.
 
-Unlike Sonarr/FileBot workflows, TV Renamer:
+Unlike Sonarr/FileBot-style workflows, TV Renamer:
 
 - does not require metadata scraping
 - does not require internet lookups
 - does not require drag/drop importing
-- does not require manual renaming passes
-- does not require episode matching heuristics
+- does not require a manual renaming pass
+- does not try to identify episodes by title or fingerprint
 
-If your workflow already preserves episode order,
-then deterministic sequential numbering is simpler
-and more reliable.
+If your workflow already preserves episode order, deterministic sequential numbering is simpler and more predictable.
 
 ---
 
@@ -75,8 +64,9 @@ TV Renamer is ideal for:
 
 - DVD TV box sets
 - Blu-ray TV collections
-- Jellyfin users
-- Plex users
+- anime discs with multi-episode MKV titles
+- Jellyfin libraries
+- Plex libraries
 - archival workflows
 - offline media libraries
 - users who rip episodes sequentially
@@ -90,46 +80,53 @@ TV Renamer is not designed for:
 - downloaded scene releases
 - automatic metadata matching
 - anime absolute numbering
-- mixed episode ordering
+- mixed or reordered episode layouts
 - bonus feature identification
-- multi-episode single MKV splitting
+- replacing a full media manager
+
+Anime splitting is supported when a long MKV has useful chapter markers near episode boundaries. If chapter data is missing or unusual, TV Renamer falls back to manual timestamp entry.
 
 ---
 
 # Features
 
-* Automatic sequential episode numbering
-* Multi-disc support
-* Jellyfin-compatible naming
-* Plex-compatible naming
-* Real-time folder monitoring
-* Automatic next-episode detection
-* File completion/stability detection
-* Interactive season switching
-* Interactive show switching
-* Live status commands
-* Windows standalone EXE support
-* No metadata scraping
-* No TMDB dependency
-* No Sonarr required
-* No paid software required
+- Automatic sequential episode numbering
+- Multi-disc support
+- Jellyfin-compatible naming
+- Plex-compatible naming
+- Real-time folder monitoring
+- File completion/stability detection
+- Automatic next-episode detection
+- Interactive season switching
+- Interactive show switching
+- Runtime mode switching
+- Live status command
+- Folder reconfiguration command
+- Windows standalone EXE support
+- Anime/Split Mode for long MKV files
+- Automatic chapter-based anime split detection
+- Manual timestamp splitting fallback
+- No metadata scraping
+- No TMDB dependency
+- No Sonarr required
+- No paid software required
 
 ---
 
 # Requirements
 
-TV Renamer now supports two installation methods:
+TV Renamer supports two installation methods.
 
 ---
 
-## Option 1 — Windows EXE (Recommended)
+## Option 1 - Windows EXE
 
-No Python installation required.
+No Python installation is required.
 
 Download the latest release from:
 
 ```text
-GitHub → Releases
+GitHub -> Releases
 ```
 
 Then run:
@@ -142,29 +139,50 @@ This is the simplest setup method for most users.
 
 ---
 
-## Option 2 — Run From Python Source
+## Option 2 - Run From Python Source
 
 Requirements:
 
-* Python 3.10+
-* MakeMKV
-* watchdog Python package
+- Python 3.10+
+- MakeMKV
+- watchdog Python package
 
 Install watchdog:
 
-````bash
+```bash
 pip install watchdog
-````
+```
 
 ---
-## First Launch Configuration
 
-The first time TV Renamer is launched, it will open folder selection windows.
+## Anime/Split Mode Requirement
+
+Anime/Split Mode uses MKVToolNix for splitting and automatic chapter detection.
+
+Install MKVToolNix, then make sure this command works from a terminal:
+
+```bash
+mkvmerge --version
+```
+
+TV Renamer calls:
+
+```text
+mkvmerge.exe
+```
+
+If `mkvmerge.exe` is not available in PATH, automatic splitting and manual timestamp splitting will not work.
+
+---
+
+# First Launch Configuration
+
+The first time TV Renamer is launched, it opens folder selection windows.
 
 You will be asked to select:
 
-* your MakeMKV `Incoming` folder
-* your main TV library root folder
+- your MakeMKV `Incoming` folder
+- your main TV library root folder
 
 Example:
 
@@ -176,35 +194,36 @@ TV Library Root:
 C:\Users\your_username\Videos\TV_Shows
 ```
 
-TV Renamer automatically saves these locations into:
+TV Renamer saves these locations into:
 
 ```text
 config.json
 ```
 
-Future launches will reuse the saved configuration automatically.
+Future launches reuse the saved configuration automatically.
+
 ---
 
 # Recommended Folder Structure
 
 ```text
 TV_Shows/
-│
-├── Incoming/
-│
-├── Vikings (2013)/
-│   └── Season 01/
-│
-└── Breaking Bad (2008)/
-    └── Season 01/
+|
++-- Incoming/
+|
++-- Vikings (2013)/
+|   +-- Season 01/
+|
++-- Breaking Bad (2008)/
+    +-- Season 01/
 ```
 
 Recommended setup:
 
-* `Incoming/` is used only for fresh MakeMKV rips
-* TV Renamer watches `Incoming/`
-* Completed files are moved into show season folders automatically
-* Jellyfin scans the organized folders normally
+- `Incoming/` is used only for fresh MakeMKV rips
+- TV Renamer watches `Incoming/`
+- completed files are moved into show season folders automatically
+- Jellyfin or Plex scans the organized folders normally
 
 ---
 
@@ -215,13 +234,13 @@ Recommended setup:
 In MakeMKV:
 
 ```text
-View → Preferences
+View -> Preferences
 ```
 
 Then:
 
 ```text
-Preferences → General
+Preferences -> General
 ```
 
 Enable:
@@ -239,7 +258,7 @@ This unlocks advanced filename formatting options.
 After enabling Expert Mode:
 
 ```text
-Preferences → Video
+Preferences -> Video
 ```
 
 Locate:
@@ -261,7 +280,7 @@ Vikings_t00.mkv
 Vikings_t01.mkv
 ```
 
-TV Renamer will later convert these into:
+TV Renamer converts those files into:
 
 ```text
 Vikings - S01E01.mkv
@@ -284,9 +303,9 @@ In MakeMKV, set the export/output folder to this location.
 
 This folder is important because:
 
-* MakeMKV writes files progressively while ripping
-* TV Renamer monitors this folder in real time
-* completed files are automatically moved into your Jellyfin library
+- MakeMKV writes files progressively while ripping
+- TV Renamer monitors this folder in real time
+- completed files are automatically moved into your TV library
 
 The incoming folder acts like a processing queue.
 
@@ -302,9 +321,7 @@ Example:
 Vikings
 ```
 
-This ensures temporary MakeMKV filenames remain clean and readable.
-
-Example:
+This keeps temporary MakeMKV filenames readable:
 
 ```text
 Vikings_t00.mkv
@@ -320,13 +337,13 @@ DISC_1_t00.mkv
 
 # How TV Renamer Works
 
-1. You insert a disc into MakeMKV
-2. You select only actual episode titles
-3. MakeMKV exports `.mkv` files into `Incoming/`
-4. TV Renamer detects new files
-5. TV Renamer waits until ripping finishes
-6. The next episode number is determined automatically
-7. Files are renamed and moved into Jellyfin folders
+1. Insert a disc into MakeMKV.
+2. Select only actual episode titles.
+3. Export `.mkv` files into `Incoming/`.
+4. TV Renamer detects new files.
+5. TV Renamer waits until ripping finishes.
+6. The next episode number is determined automatically.
+7. Files are renamed and moved into the correct season folder.
 
 Example final structure:
 
@@ -335,6 +352,47 @@ Vikings (2013)/
   Season 01/
     Vikings - S01E01.mkv
     Vikings - S01E02.mkv
+```
+
+---
+
+# Anime/Split Mode
+
+Anime/Split Mode is designed for discs where MakeMKV creates one long MKV containing multiple episodes.
+
+When Anime/Split Mode is enabled, TV Renamer will:
+
+1. Detect a completed MKV file.
+2. Read MKV metadata using `mkvmerge -J`.
+3. Estimate the number of episodes from the total runtime.
+4. Look for chapter markers near expected episode boundaries.
+5. Show the proposed split timestamps.
+6. Ask for confirmation before splitting.
+7. Rename and move each split episode sequentially.
+
+Example:
+
+```text
+Automatic split points found:
+00:24:10.000, 00:48:22.000
+
+Split automatically using these timestamps? (y/n):
+```
+
+Those split points create:
+
+```text
+Episode 1 = 00:00:00 -> 00:24:10
+Episode 2 = 00:24:10 -> 00:48:22
+Episode 3 = 00:48:22 -> end
+```
+
+If automatic detection is unavailable, TV Renamer can still ask for manual split timestamps.
+
+Manual timestamp example:
+
+```text
+00:24:10,00:48:22
 ```
 
 ---
@@ -349,7 +407,7 @@ Download:
 TV_Renamer.exe
 ```
 
-Then simply double-click the executable.
+Then double-click the executable.
 
 ---
 
@@ -373,23 +431,29 @@ If `python` does not work on your system, try:
 py tv_renamer.py
 ```
 
-
 Example startup:
 
 ```text
 Show name: Vikings
 Year: 2013
 Season number: 1
+
+Rip Modes
+------------------------------
+1. Standard TV
+2. Anime / Split Mode
+
+Select mode:
 ```
 
-TV Renamer automatically:
+TV Renamer then:
 
-1. Scans the existing season folder as long as you directed the 
-2. Detects the highest episode already present
-3. Determines the next episode number
-4. Watches the incoming folder
-5. Waits for completed MKV files
-6. Renames and moves episodes automatically
+1. scans the existing season folder
+2. detects the highest episode already present
+3. determines the next episode number
+4. watches the incoming folder
+5. waits for completed MKV files
+6. renames and moves episodes automatically
 
 ---
 
@@ -399,8 +463,10 @@ While TV Renamer is running, the following commands are available:
 
 ```text
 s       = Change season
-n       = New show
+n       = Change show
+mode    = Change rip mode
 status  = Show current status
+config  = Reconfigure folders
 help    = Show commands
 q       = Quit
 ```
@@ -409,7 +475,7 @@ This allows continuous ripping sessions without restarting the application.
 
 ---
 
-# Example Workflow
+# Example Standard TV Workflow
 
 ## Existing Library
 
@@ -430,7 +496,7 @@ Incoming/
   Vikings_t01.mkv
 ```
 
-TV Renamer automatically converts them into:
+TV Renamer converts them into:
 
 ```text
 Vikings (2013)/
@@ -441,23 +507,46 @@ Vikings (2013)/
 
 ---
 
+# Example Anime Split Workflow
+
+MakeMKV creates one long file:
+
+```text
+Incoming/
+  ExampleAnime_t10.mkv
+```
+
+TV Renamer detects chapter-based split points and creates:
+
+```text
+Example Anime (2024)/
+  Season 01/
+    Example Anime - S01E01.mkv
+    Example Anime - S01E02.mkv
+    Example Anime - S01E03.mkv
+```
+
+---
+
 # Philosophy
 
-Most TV ripping workflows overcomplicate episode handling using:
+Most TV ripping workflows overcomplicate episode handling with:
 
-* metadata scraping
-* API lookups
-* duration matching
-* title fingerprinting
-* external databases
+- metadata scraping
+- API lookups
+- duration matching
+- title fingerprinting
+- external databases
+- import queues
 
-TV Renamer intentionally avoids these systems.
+TV Renamer intentionally avoids those systems.
 
 The workflow already contains the necessary intelligence:
 
-* the user manually selects correct episode titles
-* episodes are ripped sequentially
-* filesystem state determines the next episode number
+- the user selects the correct episode titles
+- episodes are ripped sequentially
+- filesystem state determines the next episode number
+- chapter markers can identify split points for many anime discs
 
 This makes the workflow deterministic, lightweight, and reliable.
 
@@ -465,35 +554,6 @@ This makes the workflow deterministic, lightweight, and reliable.
 
 # License
 
-MIT License
+Apache License 2.0
 
-See LICENSE file for details.
-
-
-
----
-
-## LICENSE
-
-```text
-Apache License
-Version 2.0, January 2004
-http://www.apache.org/licenses/
-
-Copyright 2026 Joshua Holmes 
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-
-See the License for the specific language governing permissions and
-limitations under the License.
-````
-
----
+See [LICENSE.md](LICENSE.md) for details.
