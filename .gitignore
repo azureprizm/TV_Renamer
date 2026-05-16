@@ -1,14 +1,42 @@
-## .gitignore
-
-```gitignore
+# Python cache/build artifacts
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.log
-.env
-venv/
-.venv/
-```
+*.py[cod]
+*$py.class
 
----
+# Virtual environments
+.env
+.venv/
+venv/
+env/
+
+# Local app configuration
+config.json
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.bak
+
+# PyInstaller artifacts
+build/
+dist/
+
+# Test/tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor/OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local media/rip files
+*.mkv
+*.mp4
+*.avi
+*.mov
+*.m4v
