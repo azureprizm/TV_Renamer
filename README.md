@@ -1,18 +1,18 @@
 # TV Renamer
 
-[!\[License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.md)
-!\[Platform](https://img.shields.io/badge/platform-Windows-0078D6)
-!\[Python](https://img.shields.io/badge/python-3.10%2B-blue)
-!\[Status](https://img.shields.io/badge/status-active-success)
-!\[Jellyfin](https://img.shields.io/badge/Jellyfin-compatible-8250df)
-!\[Plex](https://img.shields.io/badge/Plex-compatible-e5a00d)
-!\[MakeMKV](https://img.shields.io/badge/MakeMKV-supported-red)
-!\[MKVToolNix](https://img.shields.io/badge/MKVToolNix-supported-orange)
-!\[Open Source](https://img.shields.io/badge/open--source-yes-brightgreen)
-!\[GitHub release](https://img.shields.io/github/v/release/azureprizm/TV\_Renamer)
-!\[GitHub downloads](https://img.shields.io/github/downloads/azureprizm/TV\_Renamer/total)
-!\[GitHub stars](https://img.shields.io/github/stars/azureprizm/TV\_Renamer)
-!\[GitHub issues](https://img.shields.io/github/issues/azureprizm/TV\_Renamer)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE.md)
+![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![Status](https://img.shields.io/badge/status-active-success)
+![Jellyfin](https://img.shields.io/badge/Jellyfin-compatible-8250df)
+![Plex](https://img.shields.io/badge/Plex-compatible-e5a00d)
+![MakeMKV](https://img.shields.io/badge/MakeMKV-supported-red)
+![MKVToolNix](https://img.shields.io/badge/MKVToolNix-supported-orange)
+![Open Source](https://img.shields.io/badge/open--source-yes-brightgreen)
+![GitHub release](https://img.shields.io/github/v/release/azureprizm/TV\_Renamer)
+![GitHub downloads](https://img.shields.io/github/downloads/azureprizm/TV\_Renamer/total)
+![GitHub stars](https://img.shields.io/github/stars/azureprizm/TV\_Renamer)
+![GitHub issues](https://img.shields.io/github/issues/azureprizm/TV\_Renamer)
 
 TV Renamer is a lightweight Windows utility for organizing physical-media TV rips from MakeMKV into Jellyfin- and Plex-friendly season folders.
 
