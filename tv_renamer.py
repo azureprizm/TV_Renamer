@@ -161,6 +161,23 @@ show_name = input("Show name: ").strip()
 year = input("Year: ").strip()
 season = int(input("Season number: ").strip())
 
+print("\nRip Modes")
+print("-" * 30)
+print("1. Standard TV")
+print("2. Anime / Multi-Episode")
+
+mode_choice = input(
+    "\nSelect mode: "
+).strip()
+
+if mode_choice == "2":
+
+    rip_mode = "anime"
+
+else:
+
+    rip_mode = "standard"
+
 
 # ============================================================
 # PATH SETUP
@@ -213,6 +230,54 @@ def build_episode_filename(ep_num):
     )
 
 
+def build_multi_episode_filename(
+    start_ep,
+    end_ep
+):
+
+    return (
+        f"{show_name} - "
+        f"S{season:02d}"
+        f"E{start_ep:02d}"
+        f"-E{end_ep:02d}.mkv"
+    )
+
+
+# ============================================================
+# NEW ADDITION
+# MKV TITLE DETECTION
+# ============================================================
+
+TITLE_PATTERN = re.compile(
+    r"_t(\d+)",
+    re.IGNORECASE
+)
+
+
+def extract_title_number(file_name):
+
+    match = TITLE_PATTERN.search(
+        file_name
+    )
+
+    if not match:
+
+        return None
+
+    return int(match.group(1))
+
+
+def is_probable_multi_episode(
+    title_number
+):
+
+    if title_number is None:
+
+        return False
+
+    return title_number >= 10
+
+
 def wait_for_file_complete(file_path):
     """
     Wait until file size stops changing.
@@ -243,28 +308,184 @@ def wait_for_file_complete(file_path):
 # ============================================================
 
 def process_file(file_path):
+
     global next_episode
 
     print(f"\nDetected: {file_path.name}")
 
     print("Waiting for rip to finish...")
-    complete = wait_for_file_complete(file_path)
+
+    complete = wait_for_file_complete(
+        file_path
+    )
 
     if not complete:
+
         print("File disappeared.")
         return
 
-    new_name = build_episode_filename(next_episode)
+    # ====================================================
+    # NEW ADDITION
+    # TITLE NUMBER ANALYSIS
+    # ====================================================
+
+    detected_title = extract_title_number(
+        file_path.name
+    )
+
+    if detected_title is not None:
+
+        print(
+            f"Detected MakeMKV title: "
+            f"t{detected_title:02d}"
+        )
+
+    # ====================================================
+    # ANIME MODE
+    # ====================================================
+
+    if rip_mode == "anime":
+
+        print("\nAnime mode enabled.")
+
+        # ================================================
+        # NEW ADDITION
+        # SMART SUGGESTION
+        # ================================================
+
+        suggested_count = 1
+
+        if is_probable_multi_episode(
+            detected_title
+        ):
+
+            suggested_count = 2
+
+            print(
+                "\nPossible multi-episode file "
+                "detected."
+            )
+
+            print(
+                "Suggested episode count: 2"
+            )
+
+        while True:
+
+            try:
+
+                user_input = input(
+                    "Episodes contained in this MKV "
+                    f"[{suggested_count}]: "
+                ).strip()
+
+                if user_input == "":
+
+                    episode_count = (
+                        suggested_count
+                    )
+
+                else:
+
+                    episode_count = int(
+                        user_input
+                    )
+
+                if episode_count < 1:
+
+                    raise ValueError
+
+                break
+
+            except ValueError:
+
+                print(
+                    "Please enter a valid number."
+                )
+
+        start_episode = next_episode
+
+        end_episode = (
+            next_episode
+            + episode_count
+            - 1
+        )
+
+        # ================================================
+        # SINGLE EPISODE
+        # ================================================
+
+        if episode_count == 1:
+
+            new_name = build_episode_filename(
+                start_episode
+            )
+
+        # ================================================
+        # MULTI EPISODE
+        # ================================================
+
+        else:
+
+            new_name = (
+                build_multi_episode_filename(
+                    start_episode,
+                    end_episode
+                )
+            )
+
+        destination = (
+            DESTINATION_DIR
+            / new_name
+        )
+
+        if destination.exists():
+
+            print(
+                f"ERROR: File already exists:\n"
+                f"{destination}"
+            )
+
+            return
+
+        print(f"Moving to:\n{destination}")
+
+        shutil.move(
+            str(file_path),
+            str(destination)
+        )
+
+        print(f"Created: {new_name}")
+
+        next_episode = end_episode + 1
+
+        return
+
+    # ====================================================
+    # STANDARD MODE
+    # ====================================================
+
+    new_name = build_episode_filename(
+        next_episode
+    )
 
     destination = DESTINATION_DIR / new_name
 
     if destination.exists():
-        print(f"ERROR: File already exists:\n{destination}")
+
+        print(
+            f"ERROR: File already exists:\n"
+            f"{destination}"
+        )
+
         return
 
     print(f"Moving to:\n{destination}")
 
-    shutil.move(str(file_path), str(destination))
+    shutil.move(
+        str(file_path),
+        str(destination)
+    )
 
     print(f"Created: {new_name}")
 
@@ -364,6 +585,8 @@ def show_status():
 
     print(f"Season: {season:02d}")
 
+    print(f"Mode: {rip_mode}")
+
     print(
         f"Next Episode: "
         f"{next_episode:02d}"
@@ -384,6 +607,7 @@ def command_listener():
     global show_name
     global year
     global season
+    global rip_mode
 
     while True:
 
@@ -444,6 +668,34 @@ def command_listener():
             print("\nShow updated.\n")
 
         # ====================================================
+        # CHANGE MODE
+        # ====================================================
+
+        elif command == "mode":
+
+            print("\nRIP MODES")
+            print("-" * 30)
+
+            print("1. Standard TV")
+            print("2. Anime / Multi-Episode")
+
+            mode_choice = input(
+                "\nSelect mode: "
+            ).strip()
+
+            if mode_choice == "2":
+
+                rip_mode = "anime"
+
+            else:
+
+                rip_mode = "standard"
+
+            print(
+                f"\nMode changed to: {rip_mode}\n"
+            )
+
+        # ====================================================
         # STATUS
         # ====================================================
 
@@ -486,6 +738,10 @@ def command_listener():
 
             print(
                 "n       = Change show"
+            )
+
+            print(
+                "mode    = Change rip mode"
             )
 
             print(
