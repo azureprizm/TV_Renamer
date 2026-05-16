@@ -174,6 +174,41 @@ mkvmerge.exe
 
 If `mkvmerge.exe` is not available in PATH, automatic splitting and manual timestamp splitting will not work.
 
+## Adding MKVToolNix To PATH On Windows
+
+MKVToolNix usually installs to:
+
+```text
+C:\Program Files\MKVToolNix
+```
+
+To make `mkvmerge.exe` available to TV Renamer:
+
+1. Press `Win`.
+2. Search for `Environment Variables`.
+3. Open `Edit the system environment variables`.
+4. Click `Environment Variables...`.
+5. Under `User variables` or `System variables`, select `Path`.
+6. Click `Edit`.
+7. Click `New`.
+8. Add the MKVToolNix install folder:
+
+```text
+C:\Program Files\MKVToolNix
+```
+
+9. Click `OK` until all settings windows are closed.
+10. Open a new PowerShell window.
+11. Run:
+
+```powershell
+mkvmerge --version
+```
+
+If a version number appears, MKVToolNix is set up correctly.
+
+If the command is not recognized, confirm that `mkvmerge.exe` exists inside the folder you added to PATH. Already-open terminals may need to be closed and reopened before they detect PATH changes.
+
 ---
 
 # First Launch Configuration
@@ -404,6 +439,33 @@ Manual timestamp example:
 ```text
 00:24:10,00:48:22
 ```
+
+## Optional AI Runtime Check
+
+TV Renamer does not scrape IMDb, TMDB, AniDB, or other metadata sites. This keeps the app simple, offline-friendly, and focused on deterministic file handling.
+
+If you want to double-check runtime-based split points before confirming a split, you can ask an AI assistant such as ChatGPT to summarize episode runtimes from IMDb or another episode guide site.
+
+Use this as a starting prompt:
+
+```text
+Look up the episode runtimes for [SHOW NAME], season [SEASON NUMBER].
+Use IMDb or another reliable episode guide if IMDb is incomplete.
+Return only the episodes in season order.
+Include each episode number, title if available, listed runtime, and cumulative split point.
+If sources disagree, mention the difference briefly.
+Do not include plot summaries.
+```
+
+Example output format to ask for:
+
+```text
+S01E01 - 24 min - split after 00:24:00
+S01E02 - 24 min - split after 00:48:00
+S01E03 - 23 min - split after 01:11:00
+```
+
+Those cumulative split points can be compared against TV Renamer's proposed timestamps. For discs that include intros, recaps, previews, or credits inside each episode, the MKV runtime may differ slightly from online listings, so use the AI output as a sanity check rather than an exact cutting authority.
 
 ---
 
