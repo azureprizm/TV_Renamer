@@ -44,6 +44,15 @@ IMDB_EPISODE_FILE = "title.episode.tsv.gz"
 
 FFMPEG_REFINE_WINDOW_SECONDS = 90
 FFMPEG_MAX_REFINEMENT_SECONDS = 45
+IMDB_PROGRESS_ROW_INTERVAL = 250000
+
+
+def progress(message):
+
+    print(
+        message,
+        flush=True
+    )
 
 
 def select_optional_imdb_data_dir():
@@ -78,6 +87,64 @@ def select_optional_imdb_data_dir():
     return str(
         Path(imdb_data_dir)
     )
+
+
+def ensure_directory(path, description):
+
+    try:
+
+        path.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+    except PermissionError:
+
+        print(
+            "\nERROR:"
+        )
+
+        print(
+            f"TV Renamer does not have "
+            f"permission to create the "
+            f"{description} folder:"
+        )
+
+        print(
+            path
+        )
+
+        print(
+            "\nChoose a folder you can write "
+            "to, then run the 'config' "
+            "command or delete config.json "
+            "and restart TV Renamer."
+        )
+
+        return False
+
+    except OSError as error:
+
+        print(
+            "\nERROR:"
+        )
+
+        print(
+            f"Could not create the "
+            f"{description} folder:"
+        )
+
+        print(
+            path
+        )
+
+        print(
+            f"\nWindows error: {error}"
+        )
+
+        return False
+
+    return True
 
 
 def create_config():
@@ -116,15 +183,36 @@ def create_config():
     incoming_path = Path(incoming)
     tv_root_path = Path(tv_root)
 
-    incoming_path.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    if incoming_path == tv_root_path:
 
-    tv_root_path.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+        print(
+            "\nWARNING:"
+        )
+
+        print(
+            "Incoming folder and TV library "
+            "root are the same folder."
+        )
+
+        print(
+            "This works, but it is usually "
+            "better to put Incoming inside "
+            "your TV library root or beside "
+            "it as a separate processing "
+            "folder."
+        )
+
+    if not ensure_directory(
+        incoming_path,
+        "incoming"
+    ):
+        quit()
+
+    if not ensure_directory(
+        tv_root_path,
+        "TV library root"
+    ):
+        quit()
 
     config_data = {
         "incoming_dir": str(incoming_path),
@@ -213,10 +301,11 @@ DESTINATION_DIR = (
     / season_folder
 )
 
-DESTINATION_DIR.mkdir(
-    parents=True,
-    exist_ok=True
-)
+if not ensure_directory(
+    DESTINATION_DIR,
+    "destination season"
+):
+    quit()
 
 
 # ============================================================
@@ -292,6 +381,7 @@ def wait_for_file_complete(file_path):
 
     stable_for = 0
     last_size = -1
+    last_reported_stable_for = -1
 
     while stable_for < STABLE_TIME:
 
@@ -311,6 +401,19 @@ def wait_for_file_complete(file_path):
 
             stable_for = 0
             last_size = current_size
+
+        if (
+            stable_for != last_reported_stable_for
+            and stable_for % 10 == 0
+        ):
+
+            progress(
+                f"File stability check: "
+                f"{stable_for}/{STABLE_TIME} "
+                "seconds stable..."
+            )
+
+            last_reported_stable_for = stable_for
 
         time.sleep(POLL_INTERVAL)
 
@@ -396,22 +499,11 @@ def seconds_to_timestamp(seconds):
 
 def load_mkv_metadata(input_file):
 
-    command = [
-        MKVMERGE_PATH,
-        "-J",
-        str(input_file)
-    ]
+    mkvmerge_path = shutil.which(
+        MKVMERGE_PATH
+    )
 
-    try:
-
-        result = subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True
-        )
-
-    except FileNotFoundError:
+    if not mkvmerge_path:
 
         print(
             "\nAutomatic split unavailable:"
@@ -424,6 +516,21 @@ def load_mkv_metadata(input_file):
         )
 
         return None
+
+    command = [
+        mkvmerge_path,
+        "-J",
+        str(input_file)
+    ]
+
+    try:
+
+        result = subprocess.run(
+            command,
+            check=True,
+            capture_output=True,
+            text=True
+        )
 
     except subprocess.CalledProcessError:
 
@@ -612,7 +719,13 @@ def get_imdb_dataset_paths():
     return basics_path, episode_path
 
 
-def iter_imdb_rows(path):
+def iter_imdb_rows(
+    path,
+    progress_label=None
+):
+
+    row_count = 0
+    started_at = time.time()
 
     with gzip.open(
         path,
@@ -627,7 +740,36 @@ def iter_imdb_rows(path):
         )
 
         for row in reader:
+            row_count += 1
+
+            if (
+                progress_label
+                and row_count % IMDB_PROGRESS_ROW_INTERVAL == 0
+            ):
+
+                elapsed = int(
+                    time.time() - started_at
+                )
+
+                progress(
+                    f"{progress_label}: "
+                    f"{row_count:,} rows scanned "
+                    f"({elapsed}s)..."
+                )
+
             yield row
+
+    if progress_label:
+
+        elapsed = int(
+            time.time() - started_at
+        )
+
+        progress(
+            f"{progress_label}: "
+            f"complete "
+            f"({row_count:,} rows, {elapsed}s)."
+        )
 
 
 def find_imdb_series_tconst(basics_path):
@@ -640,7 +782,8 @@ def find_imdb_series_tconst(basics_path):
     best_score = 0
 
     for row in iter_imdb_rows(
-        basics_path
+        basics_path,
+        "Scanning IMDb titles"
     ):
 
         if row.get("titleType") not in (
@@ -715,7 +858,8 @@ def get_imdb_season_episode_map(
     episode_map = {}
 
     for row in iter_imdb_rows(
-        episode_path
+        episode_path,
+        "Scanning IMDb episode map"
     ):
 
         if row.get("parentTconst") != series_tconst:
@@ -765,7 +909,8 @@ def get_imdb_episode_details(
     episode_details = {}
 
     for row in iter_imdb_rows(
-        basics_path
+        basics_path,
+        "Scanning IMDb episode runtimes"
     ):
 
         tconst = row.get("tconst")
@@ -951,7 +1096,8 @@ def normalize_ffmpeg_candidate_time(
 
 def find_black_frame_candidates(
     input_file,
-    predicted_seconds
+    predicted_seconds,
+    ffmpeg_path
 ):
 
     start_seconds = max(
@@ -961,7 +1107,7 @@ def find_black_frame_candidates(
     )
 
     command = [
-        FFMPEG_PATH,
+        ffmpeg_path,
         "-hide_banner",
         "-nostats",
         "-ss",
@@ -1014,7 +1160,8 @@ def find_black_frame_candidates(
 
 def find_silence_candidates(
     input_file,
-    predicted_seconds
+    predicted_seconds,
+    ffmpeg_path
 ):
 
     start_seconds = max(
@@ -1024,7 +1171,7 @@ def find_silence_candidates(
     )
 
     command = [
-        FFMPEG_PATH,
+        ffmpeg_path,
         "-hide_banner",
         "-nostats",
         "-ss",
@@ -1085,32 +1232,50 @@ def refine_split_points_with_ffmpeg(
     split_points
 ):
 
-    if not shutil.which(
+    ffmpeg_path = shutil.which(
         FFMPEG_PATH
-    ):
+    )
+
+    if not ffmpeg_path:
         return split_points
 
     refined_points = []
 
-    print(
+    progress(
         "\nRefining split points with ffmpeg..."
     )
 
-    for split_point in split_points:
+    total_points = len(
+        split_points
+    )
+
+    for index, split_point in enumerate(
+        split_points,
+        start=1
+    ):
+
+        progress(
+            f"ffmpeg refinement "
+            f"{index}/{total_points}: "
+            f"checking around "
+            f"{seconds_to_timestamp(split_point)}..."
+        )
 
         candidates = []
 
         candidates.extend(
             find_black_frame_candidates(
                 input_file,
-                split_point
+                split_point,
+                ffmpeg_path
             )
         )
 
         candidates.extend(
             find_silence_candidates(
                 input_file,
-                split_point
+                split_point,
+                ffmpeg_path
             )
         )
 
@@ -1124,19 +1289,34 @@ def refine_split_points_with_ffmpeg(
 
         if nearby_candidates:
 
-            refined_points.append(
-                min(
-                    nearby_candidates,
-                    key=lambda candidate: abs(
-                        candidate - split_point
-                    )
+            refined_point = min(
+                nearby_candidates,
+                key=lambda candidate: abs(
+                    candidate - split_point
                 )
+            )
+
+            refined_points.append(
+                refined_point
+            )
+
+            progress(
+                f"ffmpeg refinement "
+                f"{index}/{total_points}: "
+                f"using "
+                f"{seconds_to_timestamp(refined_point)}."
             )
 
         else:
 
             refined_points.append(
                 split_point
+            )
+
+            progress(
+                f"ffmpeg refinement "
+                f"{index}/{total_points}: "
+                "no better nearby boundary found."
             )
 
     return refined_points
@@ -1393,6 +1573,24 @@ def split_mkv_by_timestamps(
 
     print("\nStarting MKV split process...")
 
+    mkvmerge_path = shutil.which(
+        MKVMERGE_PATH
+    )
+
+    if not mkvmerge_path:
+
+        print(
+            "\nERROR:"
+            "\nmkvmerge.exe not found."
+        )
+
+        print(
+            "\nInstall MKVToolNix "
+            "and add it to PATH."
+        )
+
+        return False
+
     temp_dir = Path(
         tempfile.mkdtemp(
             prefix="tvrenamer_"
@@ -1409,7 +1607,7 @@ def split_mkv_by_timestamps(
     )
 
     command = [
-        MKVMERGE_PATH,
+        mkvmerge_path,
         "-o",
         str(output_pattern),
         "--split",
@@ -1423,20 +1621,6 @@ def split_mkv_by_timestamps(
             command,
             check=True
         )
-
-    except FileNotFoundError:
-
-        print(
-            "\nERROR:"
-            "\nmkvmerge.exe not found."
-        )
-
-        print(
-            "\nInstall MKVToolNix "
-            "and add it to PATH."
-        )
-
-        return False
 
     except subprocess.CalledProcessError:
 
@@ -1574,8 +1758,12 @@ def process_file(file_path):
                 )
             )
 
+            print(
+                "\nACTION REQUIRED:"
+            )
+
             auto_choice = input(
-                "\nSplit automatically "
+                "Split automatically "
                 "using these timestamps? "
                 "(y/n): "
             ).strip().lower()
@@ -1589,8 +1777,12 @@ def process_file(file_path):
 
                 return
 
+        print(
+            "\nACTION REQUIRED:"
+        )
+
         split_choice = input(
-            "\nEnter manual split timestamps? "
+            "Enter manual split timestamps? "
             "(y/n): "
         ).strip().lower()
 
@@ -1736,10 +1928,11 @@ def rebuild_destination():
         / season_folder
     )
 
-    DESTINATION_DIR.mkdir(
-        parents=True,
-        exist_ok=True
-    )
+    if not ensure_directory(
+        DESTINATION_DIR,
+        "destination season"
+    ):
+        return
 
     EPISODE_PATTERN = re.compile(
         rf"S{season:02d}E(\d+)",
