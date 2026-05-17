@@ -101,6 +101,7 @@ Anime splitting is supported when a long MKV has useful chapter markers near epi
 - Interactive show switching
 - Runtime mode switching
 - Live status command
+- Desktop GUI front end for session setup, folder watching, queueing, and logs
 - Folder reconfiguration command
 - Windows standalone EXE support
 - Anime/Split Mode for long MKV files
@@ -133,13 +134,55 @@ Download the latest release from:
 GitHub -> Releases
 ```
 
+For most users, download the GUI release zip, extract it to a normal folder such as:
+
+```text
+C:\Users\your_username\Apps\TV_Renamer
+```
+
+The recommended release zip contains:
+
+```text
+TV_Renamer_GUI.exe
+README.md
+LICENSE.md
+RELEASE_NOTES_v1.2.0.md
+tv_renamer.ico
+create_gui_desktop_shortcut.ps1
+```
+
 Then run:
+
+```text
+TV_Renamer_GUI.exe
+```
+
+On first use:
+
+1. Choose your incoming MakeMKV folder.
+2. Choose your TV library root folder.
+3. Enter the show name, year, season, and mode.
+4. Click `Save Session`.
+5. Click `Start Watcher`.
+6. Optional: click `Create Desktop Shortcut`.
+
+TV Renamer will create local files such as `config.json` and `IMDb Cache/` beside the app as needed. Do not run the app directly from inside the zip file; extract it first.
+
+The console EXE, when provided, is named:
 
 ```text
 TV_Renamer.exe
 ```
 
-This is the simplest setup method for most users.
+The GUI EXE is named:
+
+```text
+TV_Renamer_GUI.exe
+```
+
+The GUI is the simplest setup method for most users.
+
+Users should create their own folders and choose them inside the app.
 
 ---
 
@@ -149,13 +192,15 @@ Requirements:
 
 - Python 3.10+
 - MakeMKV
-- watchdog Python package
+- watchdog Python package for the console watcher
 
 Install watchdog:
 
 ```bash
 pip install watchdog
 ```
+
+The GUI front end uses Python's built-in Tkinter toolkit and does not require watchdog.
 
 ---
 
@@ -244,6 +289,14 @@ When those files are present, TV Renamer can:
 - read episode runtimes
 - calculate cumulative split points
 - scale those split points against the actual MKV duration
+
+After the first successful IMDb lookup for a series, TV Renamer writes a localized per-series JSON cache in:
+
+```text
+IMDb Cache/
+```
+
+Future lookups for that show and year use the cache before scanning the large compressed IMDb datasets again. The cache stores the matched series title, year, IMDb tconst, seasons, episode numbers, episode titles, and runtimes.
 
 IMDb runtimes are usually listed in minutes, so they are best used as a smart guide rather than exact frame-accurate cut points.
 
@@ -640,13 +693,21 @@ Those cumulative split points can be compared against TV Renamer's proposed time
 
 ## Running The Windows EXE
 
-Download:
+Download and extract the GUI release zip, then run:
+
+```text
+TV_Renamer_GUI.exe
+```
+
+The GUI will ask you to choose folders and enter show/session details.
+
+If you downloaded the console build instead, run:
 
 ```text
 TV_Renamer.exe
 ```
 
-Then double-click the executable.
+The console version prompts for setup in the terminal.
 
 ---
 
@@ -669,6 +730,20 @@ If `python` does not work on your system, try:
 ```bash
 py tv_renamer.py
 ```
+
+To run the desktop GUI from source:
+
+```bash
+python tv_renamer_gui.py
+```
+
+or:
+
+```bash
+py tv_renamer_gui.py
+```
+
+The GUI currently provides session setup, folder selection, timer-based incoming-folder watching, queued processing, live logs, and split confirmation dialogs. The visual split timeline/editor is still planned for a later GUI phase.
 
 Example startup:
 
@@ -822,6 +897,14 @@ The workflow already contains the necessary intelligence:
 - chapter markers can identify split points for many anime discs
 
 This makes the workflow deterministic, lightweight, and reliable.
+
+---
+
+# Architecture
+
+TV Renamer is being refactored toward a backend-first design so the current console workflow and a future desktop GUI can share the same processing logic.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the current direction.
 
 ---
 
