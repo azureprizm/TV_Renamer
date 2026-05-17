@@ -109,6 +109,7 @@ Anime splitting is supported when a long MKV has useful chapter markers near epi
 - Optional ffmpeg black-frame/silence refinement
 - Runtime-based anime split fallback when chapter markers are missing
 - Manual timestamp splitting fallback
+- Console progress updates for long-running scans/refinement
 - No metadata scraping
 - No TMDB dependency
 - No Sonarr required
@@ -662,6 +663,39 @@ q       = Quit
 ```
 
 This allows continuous ripping sessions without restarting the application.
+
+---
+
+# Privacy And Security
+
+TV Renamer is designed to run locally.
+
+The app does not:
+
+- upload video files
+- send show names to an online service
+- scrape live web pages
+- call IMDb, TMDB, AniDB, or Sonarr APIs
+- include telemetry or analytics
+
+The optional IMDb fallback reads only local `.tsv.gz` dataset files that you choose. The optional ffmpeg refinement analyzes only the MKV file being processed.
+
+External tools are launched without a shell, using explicit argument lists. This avoids shell command interpolation and keeps filenames from being treated as commands.
+
+TV Renamer only writes to:
+
+- the configured TV library destination
+- temporary split folders created by the operating system
+- `config.json`
+
+Temporary split files are moved into the destination folder after successful splitting. TV Renamer does not intentionally retain duplicate temporary episode files.
+
+Security recommendations:
+
+- download MKVToolNix and ffmpeg from trusted sources
+- keep `config.json` private because it contains local folder paths
+- do not commit IMDb datasets or personal library paths to GitHub
+- verify proposed split timestamps before confirming automatic splitting
 
 ---
 
