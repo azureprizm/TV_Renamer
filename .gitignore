@@ -17,10 +17,14 @@ config.json
 *.tmp
 *.temp
 *.bak
+*.lnk
 
 # PyInstaller artifacts
 build/
 dist/
+*.toc
+*.pkg
+*.pyz
 
 # Test/tool caches
 .pytest_cache/
@@ -43,3 +47,5 @@ desktop.ini
 
 # Optional local IMDb datasets if stored in the repo folder
 imdb_data/
+IMDb Datasets/
+IMDb Cache/
