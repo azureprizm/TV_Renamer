@@ -18,7 +18,7 @@
 ---
 ## Stable Usage
 
-Most users should use the packaged release from the Releases page.
+Most users should use the packaged release from the Releases page. [Download version 1.2.0](https://github.com/azureprizm/TV_Renamer/releases/tag/v1.2.0)
 
 The source branch may contain active development changes, refactors, broken or experimental features that are not yet reflected in the standalone EXE.
 
