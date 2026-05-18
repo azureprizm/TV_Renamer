@@ -11,8 +11,18 @@
 ![Open Source](https://img.shields.io/badge/open--source-yes-brightgreen)
 ![GitHub release](https://img.shields.io/github/v/release/azureprizm/TV_Renamer)
 ![GitHub downloads](https://img.shields.io/github/downloads/azureprizm/TV_Renamer/total)
+![GitHub Downloads (latest)](https://img.shields.io/github/downloads/azureprizm/TV_Renamer/latest/total)
 ![GitHub stars](https://img.shields.io/github/stars/azureprizm/TV_Renamer)
 ![GitHub issues](https://img.shields.io/github/issues/azureprizm/TV_Renamer)
+
+---
+## Stable Usage
+
+Most users should use the packaged release from the Releases page.
+
+The source branch may contain active development changes, refactors, broken or experimental features that are not yet reflected in the standalone EXE.
+
+---
 
 TV Renamer is a lightweight Windows utility for organizing physical-media TV rips from MakeMKV into Jellyfin- and Plex-friendly season folders.
 
