@@ -112,14 +112,18 @@ Anime splitting is supported when a long MKV has useful chapter markers near epi
 - Runtime mode switching
 - Live status command
 - Desktop GUI front end for session setup, folder watching, queueing, and logs
+- Sanitized shareable processing reports
+- GUI MakeMKV launch helper
 - Folder reconfiguration command
 - Windows standalone EXE support
 - Anime/Split Mode for long MKV files
 - Automatic chapter-based anime split detection
 - Optional local IMDb dataset runtime fallback
 - Optional ffmpeg black-frame/silence refinement
+- Optional ffmpeg frame preview around split boundaries
 - Runtime-based anime split fallback when chapter markers are missing
 - Manual timestamp splitting fallback
+- GUI split confirmation timeline with draggable split markers
 - Console progress updates for long-running scans/refinement
 - No metadata scraping
 - No TMDB dependency
@@ -178,6 +182,18 @@ On first use:
 
 TV Renamer will create local files such as `config.json` and `IMDb Cache/` beside the app as needed. Do not run the app directly from inside the zip file; extract it first.
 
+TV Renamer also writes sanitized processing reports to:
+
+```text
+Reports/shareable/
+```
+
+These reports include filenames, selected mode, split timestamps, fallback usage, and created output filenames. They intentionally omit absolute paths, drive letters, Windows usernames, and command lines so they are safer to share in bug reports or community posts.
+
+In the GUI, click `Open Reports` to view the generated report files.
+
+The GUI also includes `Launch MakeMKV`, which opens MakeMKV while TV Renamer continues watching the configured incoming folder. This does not modify MakeMKV settings.
+
 The console EXE, when provided, is named:
 
 ```text
@@ -192,7 +208,58 @@ TV_Renamer_GUI.exe
 
 The GUI is the simplest setup method for most users.
 
+## Release Zip Checklist
+
+When publishing a GUI release zip, include:
+
+```text
+TV_Renamer_GUI.exe
+README.md
+LICENSE.md
+RELEASE_NOTES_v1.2.0.md
+tv_renamer.ico
+create_gui_desktop_shortcut.ps1
+```
+
+Do not include:
+
+```text
+config.json
+IMDb Datasets/
+IMDb Cache/
+Reports/
+build/
+dist/
+__pycache__/
+```
+
 Users should create their own folders and choose them inside the app.
+
+## Local Build Notes
+
+To build the console EXE locally:
+
+```powershell
+pyinstaller --onefile --clean --collect-all watchdog --name TV_Renamer tv_renamer.py
+```
+
+To build the GUI EXE locally:
+
+```powershell
+.\build_gui.ps1
+```
+
+This builds `dist\TV_Renamer_GUI.exe` and refreshes the Desktop shortcut.
+
+To create or refresh only the GUI desktop shortcut:
+
+```powershell
+.\create_gui_desktop_shortcut.ps1
+```
+
+The GUI also includes a `Create Desktop Shortcut` button, which is the easiest option for most users.
+
+If PyInstaller reports `PermissionError: [WinError 5] Access is denied` for a file in `dist`, close any running copy of that EXE and try again. Windows cannot replace an executable while it is still running or locked by another process.
 
 ---
 
@@ -567,8 +634,9 @@ When Anime/Split Mode is enabled, TV Renamer will:
 7. If IMDb data is unavailable, fall back to evenly spaced runtime splits.
 8. Optionally refine fallback split points with ffmpeg.
 9. Show the proposed split timestamps.
-10. Ask for confirmation before splitting.
-11. Rename and move each split episode sequentially.
+10. In the GUI, allow timeline adjustment and optional ffmpeg frame preview around split boundaries.
+11. Ask for confirmation before splitting.
+12. Rename and move each split episode sequentially.
 
 Example:
 
@@ -588,6 +656,8 @@ Episode 3 = 00:48:22 -> end
 ```
 
 If automatic detection is unavailable, TV Renamer can still ask for manual split timestamps.
+
+In the GUI split editor, `Load Frame Preview` uses `ffmpeg.exe` to show still frames shortly before, at, and shortly after the selected split boundary. This is optional and only works when ffmpeg is available in PATH.
 
 IMDb fallback keeps episodes in season order and scales listed runtimes against the actual MKV duration:
 
@@ -753,7 +823,7 @@ or:
 py tv_renamer_gui.py
 ```
 
-The GUI currently provides session setup, folder selection, timer-based incoming-folder watching, queued processing, live logs, and split confirmation dialogs. The visual split timeline/editor is still planned for a later GUI phase.
+The GUI currently provides session setup, folder selection, timer-based incoming-folder watching, queued processing, live logs, and split confirmation dialogs with a draggable split timeline, optional ffmpeg still-frame previews, and an episode/start/end table. Richer video playback or waveform-style preview controls are still planned for a later GUI phase.
 
 Example startup:
 
@@ -915,6 +985,10 @@ This makes the workflow deterministic, lightweight, and reliable.
 TV Renamer is being refactored toward a backend-first design so the current console workflow and a future desktop GUI can share the same processing logic.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the current direction.
+
+See [DESIGN_PHILOSOPHY.md](DESIGN_PHILOSOPHY.md) for the project philosophy around deterministic, offline-first physical-media workflows.
+
+Roadmap and community issue drafts are available in [.github/ISSUE_DRAFTS](.github/ISSUE_DRAFTS).
 
 ---
 
