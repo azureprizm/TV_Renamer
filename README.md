@@ -32,7 +32,7 @@ It watches a dedicated MakeMKV output folder, waits for completed `.mkv` files, 
 - renames episodes sequentially
 - moves episodes into the correct show/season folder
 - preserves numbering across multiple discs
-- optionally splits long anime MKV files into individual episodes
+- optionally splits long anime or the Play all title (normally the largest and longest file you can rip within MakeMKV) MKV files into individual episodes
 
 ---
 
